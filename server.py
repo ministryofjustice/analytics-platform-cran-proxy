@@ -7,6 +7,7 @@ import asyncio
 import aiohttp
 import pathlib
 import tempfile
+import shutil
 
 from debian.deb822 import Deb822
 
@@ -84,8 +85,9 @@ async def packages(request):
 @app.route("/src/contrib/<package>.tar.gz")
 async def serve_tarfile(request, package):
 
-    if os.path.isfile(f"/tmp/bin/{package}_R_x86_64-pc-linux-gnu.tar.gz"):
-        return await file(f"/tmp/bin/{package}_R_x86_64-pc-linux-gnu.tar.gz")
+    binary_path = app.config.BINARY_OUTPUT_PATH / f"{package}_R_x86_64-pc-linux-gnu.tar.gz"
+    if os.path.isfile(binary_path):
+        return await file(binary_path)
 
     cran = URLObject(app.config.UPSTREAM_CRAN_SERVER_URL)
     to = cran.add_path(f"/src/contrib/{package}.tar.gz")
@@ -100,7 +102,7 @@ async def home(request, path="/"):
     cran = URLObject(app.config.UPSTREAM_CRAN_SERVER_URL)
     to = cran.add_path(path)
     logger.info(f"Proxying to {to}")
-    return pass_through(to)
+    return await pass_through(to)
 
 
 ### Lifecycle hooks
@@ -108,11 +110,12 @@ async def home(request, path="/"):
 
 @app.listener("before_server_start")
 async def aiohttp_setup(app, loop):
+    # setup the queue
+    app.compile_queue = asyncio.Queue(loop=loop)
     # setup the session
     timeout = aiohttp.ClientTimeout(total=30)
     session = aiohttp.ClientSession(loop=loop, timeout=timeout)
     app.http = session
-    app.compile_queue = asyncio.Queue(loop=loop)
 
 
 @app.listener("after_server_start")
@@ -120,6 +123,7 @@ async def compiler(app, loop):
     subprocess_extra_args = {}
 
     if not app.debug:
+        # if not debug mode, don't put the output of the compile into the logs
         subprocess_extra_args = {
             k: asyncio.subprocess.DEVNULL for k in ["stdin", "stdout", "stderr"]
         }
@@ -131,23 +135,26 @@ async def compiler(app, loop):
         async with app.semaphore:
             package: Package = await app.compile_queue.get()
             to_compile_path = package.fs_path
-            proc = await asyncio.create_subprocess_shell(
-                f"""
-                Rscript -e "devtools::install_deps('{to_compile_path}')" &&
-                cd /tmp/bin/ &&
-                R CMD INSTALL --no-demo --no-help --no-docs --clean --preclean --build {to_compile_path} &&
-                rm -rf {to_compile_path}""",
-                limit=100,
-                **subprocess_extra_args,
-            )
-            package.status = Status.BUILDING
-            await asyncio.sleep(5)
-            proc_status = await proc.wait()
-            if proc_status > 0:
-                package.status = Status.FAILED
-            else:
-                package.status = Status.BUILT
-            package.fs_path.unlink()
+            try:
+                proc = await asyncio.create_subprocess_shell(
+                    f"""
+                    Rscript -e "devtools::install_deps('{to_compile_path}')" &&
+                    cd /tmp/bin/ &&
+                    R CMD INSTALL --no-demo --no-help --no-docs --clean --preclean --build {to_compile_path} &&
+                    rm -rf {to_compile_path}""",
+                    limit=100,
+                    **subprocess_extra_args,
+                )
+                package.status = Status.BUILDING
+                await asyncio.sleep(5)
+                proc_status = await proc.wait()
+                if proc_status > 0:
+                    package.status = Status.FAILED
+                else:
+                    package.status = Status.BUILT
+            finally:
+                # delete the tempdir, './package/' will already be deleted by the build process
+                shutil.rmtree(package.fs_path.parent)
 
 
 @app.listener("after_server_stop")

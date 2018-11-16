@@ -1,0 +1,5 @@
+sanic==0.8.3
+aiohttp==3.4.4
+sanic-envconfig==1.0.1
+urlobject==2.4.3
+python-debian==0.1.33

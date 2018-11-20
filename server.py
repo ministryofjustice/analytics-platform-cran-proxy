@@ -14,6 +14,7 @@ from debian.deb822 import Deb822
 from sanic import Sanic
 from sanic.log import logger, LOGGING_CONFIG_DEFAULTS
 from sanic.response import redirect, raw, file
+from sanic_prometheus import monitor
 from urlobject import URLObject
 
 from config import Config, configure_logging
@@ -74,6 +75,9 @@ async def add_to_cache(url: URLObject):
             untarred.close()
             fileobj.close()
 
+@app.route('/healthz')
+def healthz(_):
+    return raw(b'', headers={'Cache-Control': 'no-cache, no-store, max-age=0'}, content_type='text/plain')
 
 @app.route("/src/contrib/PACKAGES")
 async def packages(request):
@@ -166,6 +170,7 @@ async def aiohttp_teardown(app, loop):
 
 
 def serve():
+    monitor(app, endpoint_type='url').expose_endpoint()
     app.run(host="0.0.0.0", port=app.config.PORT, debug=app.config.DEBUG)
     loop = asyncio.get_event_loop()
     if not loop.is_closed():

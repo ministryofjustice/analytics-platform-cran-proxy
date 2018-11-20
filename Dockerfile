@@ -8,5 +8,8 @@ RUN python3.7 -m pip install -r requirements.txt
 RUN install2.r devtools Rcpp
 RUN apt-get clean && rm -rf /var/lib/apt/lists/
 ADD . /home/app
+RUN sed -i 's/^CFLAGS = /& -static /' /etc/R/Makeconf
+RUN sed -i 's/^CXXFLAGS = /& -static /' /etc/R/Makeconf
+RUN R CMD config CFLAGS
 EXPOSE 8000
 CMD ["python3.7", "server.py"]

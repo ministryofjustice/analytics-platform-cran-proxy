@@ -86,6 +86,7 @@ async def packages(request):
     return await pass_through(to)
 
 
+@app.route("/src/contrib/Archive/<package>.tar.gz")
 @app.route("/src/contrib/<package>.tar.gz")
 async def serve_tarfile(request, package):
 
@@ -94,7 +95,8 @@ async def serve_tarfile(request, package):
         return await file(binary_path)
 
     cran = URLObject(app.config.UPSTREAM_CRAN_SERVER_URL)
-    to = cran.add_path(f"/src/contrib/{package}.tar.gz")
+
+    to = cran.add_path(request.path)
     asyncio.ensure_future(add_to_cache(to))
     logger.info(f"serve_tarfile: Redirecting [302] to {to}")
     return redirect(to)

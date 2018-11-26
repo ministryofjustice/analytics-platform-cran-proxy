@@ -17,7 +17,7 @@ BugReports: https://example.com
 LazyData: Yes
 Encoding: UTF-8
 VignetteBuilder: knitr, rmarkdown
-NeedsCompilation: yes
+NeedsCompilation: no
 Packaged: 2018-05-24 15:00:57 UTC; joe
 Author: joe [aut, cph, cre],
 Maintainer: joe <joe@example.com>

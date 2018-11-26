@@ -24,7 +24,7 @@ configure_logging(log_config)
 
 app = Sanic(log_config=log_config)
 app.config.from_object(Config)
-app.registry = Registry()
+app.registry: Registry = None
 app.semaphore = asyncio.Semaphore(1)
 app.compile_queue: asyncio.Queue = None
 
@@ -121,9 +121,13 @@ async def home(request, path="/"):
 
 
 @app.listener("before_server_start")
-async def aiohttp_setup(app, loop):
+async def setup(app, loop):
     # setup the queue
     app.compile_queue = asyncio.Queue(loop=loop)
+
+    # fresh registry
+    app.registry = Registry()
+
     # setup the session
     timeout = aiohttp.ClientTimeout(total=30)
     session = aiohttp.ClientSession(loop=loop, timeout=timeout)

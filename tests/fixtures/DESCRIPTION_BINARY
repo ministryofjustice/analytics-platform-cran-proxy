@@ -1,0 +1,26 @@
+Package: joe
+Version: 1.0.0
+Title: Useless Package
+Authors@R: c(
+    person(c("Joe", "O."), "Joe",
+           role = c("aut", "cph", "cre"),
+           email = "joe@gexample.com"),
+    person("Joe, Inc.",
+           role = c("cph", "dtc"),
+           comment = "Joe"))
+Depends: R (>= 2.10)
+Suggests: knitr, rmarkdown, testthat
+Description: fake description
+License: Apache License (== 2.0) | file LICENSE
+URL: https://example.com/
+BugReports: https://example.com
+LazyData: Yes
+Encoding: UTF-8
+VignetteBuilder: knitr, rmarkdown
+NeedsCompilation: yes
+Packaged: 2018-05-24 15:00:57 UTC; joe
+Author: joe [aut, cph, cre],
+Maintainer: joe <joe@example.com>
+Repository: CRAN
+Date/Publication: 2018-05-24 17:09:15 UTC
+Built: R 3.4.3; x86_64-pc-linux-gnu; 2018-11-15 17:40:51 UTC; unix

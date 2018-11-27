@@ -1,19 +1,17 @@
+import asyncio
+import io
 import os
+import pathlib
+import shutil
+import tarfile
+import tempfile
 from pprint import pformat
 
-import io
-import tarfile
-import asyncio
 import aiohttp
-import pathlib
-import tempfile
-import shutil
-
 from debian.deb822 import Deb822
-
 from sanic import Sanic
-from sanic.log import logger, LOGGING_CONFIG_DEFAULTS
-from sanic.response import redirect, raw, file
+from sanic.log import LOGGING_CONFIG_DEFAULTS, logger
+from sanic.response import file, raw, redirect
 from sanic_prometheus import monitor
 from urlobject import URLObject
 
@@ -26,7 +24,7 @@ configure_logging(log_config)
 
 app = Sanic(log_config=log_config)
 app.config.from_object(Config)
-app.registry = Registry()
+app.registry: Registry = None
 app.semaphore = asyncio.Semaphore(1)
 app.compile_queue: asyncio.Queue = None
 
@@ -75,9 +73,15 @@ async def add_to_cache(url: URLObject):
             untarred.close()
             fileobj.close()
 
-@app.route('/healthz')
+
+@app.route("/healthz")
 def healthz(_):
-    return raw(b'', headers={'Cache-Control': 'no-cache, no-store, max-age=0'}, content_type='text/plain')
+    return raw(
+        b"",
+        headers={"Cache-Control": "no-cache, no-store, max-age=0"},
+        content_type="text/plain",
+    )
+
 
 @app.route("/src/contrib/PACKAGES")
 async def packages(request):
@@ -88,9 +92,11 @@ async def packages(request):
 
 @app.route("/src/contrib/<package>.tar.gz")
 @app.route("/src/contrib/<path:path>/<package>.tar.gz")
-async def serve_tarfile(request, package, path = None):
+async def serve_tarfile(request, package, path=None):
 
-    binary_path = app.config.BINARY_OUTPUT_PATH / f"{package}_R_x86_64-pc-linux-gnu.tar.gz"
+    binary_path = (
+        app.config.BINARY_OUTPUT_PATH / f"{package}_R_x86_64-pc-linux-gnu.tar.gz"
+    )
     if os.path.isfile(binary_path):
         return await file(binary_path)
 
@@ -111,13 +117,17 @@ async def home(request, path="/"):
     return await pass_through(to)
 
 
-### Lifecycle hooks
+# Lifecycle hooks
 
 
 @app.listener("before_server_start")
-async def aiohttp_setup(app, loop):
+async def setup(app, loop):
     # setup the queue
     app.compile_queue = asyncio.Queue(loop=loop)
+
+    # fresh registry
+    app.registry = Registry()
+
     # setup the session
     timeout = aiohttp.ClientTimeout(total=30)
     session = aiohttp.ClientSession(loop=loop, timeout=timeout)
@@ -168,11 +178,11 @@ async def aiohttp_teardown(app, loop):
     await app.http.close()
 
 
-### Serve
+# Serve
 
 
 def serve():
-    monitor(app, endpoint_type='url').expose_endpoint()
+    monitor(app, endpoint_type="url").expose_endpoint()
     app.run(host="0.0.0.0", port=app.config.PORT, debug=app.config.DEBUG)
     loop = asyncio.get_event_loop()
     if not loop.is_closed():

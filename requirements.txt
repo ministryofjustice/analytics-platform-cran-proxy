@@ -4,3 +4,4 @@ sanic-envconfig==1.0.1
 urlobject==2.4.3
 python-debian==0.1.33
 sanic-prometheus==0.1.5
+prometheus-client>=0.4,<0.5.0

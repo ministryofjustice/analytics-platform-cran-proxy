@@ -12,7 +12,8 @@ RUN	apt-get update -y \
 	libssl-dev \
 	gfortran-8-x86-64-linux-gnux32 \
 	libbz2-dev \
-	libudunits2-dev
+	libudunits2-dev \
+	patchelf
 RUN	python3.7 -m pip install -r requirements.txt
 RUN	install2.r devtools Rcpp
 RUN	apt-get clean \

@@ -154,10 +154,9 @@ async def compiler(app, loop):
             try:
                 proc = await asyncio.create_subprocess_shell(
                     f"""
-                    Rscript -e "devtools::install_deps('{to_compile_path}')" &&
-                    cd /tmp/bin/ &&
-                    R CMD INSTALL --no-demo --no-help --no-docs --clean --preclean --build {to_compile_path} &&
-                    rm -rf {to_compile_path}""",
+                    BIN_DIR=$(/home/app/scripts/build.sh {to_compile_path} {app.config.BINARY_OUTPUT_PATH} | tail -1) &&
+                    /home/app/scripts/fatten.sh $BIN_DIR
+                    """,
                     limit=100,
                     **subprocess_extra_args,
                 )

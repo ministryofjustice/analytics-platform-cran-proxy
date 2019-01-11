@@ -13,6 +13,7 @@ class Config(EnvConfig):
     UPSTREAM_CRAN_SERVER_URL: URLObject = URLObject("https://cloud.r-project.org/")
     LOG_LEVEL: str = "INFO"
     BINARY_OUTPUT_PATH: Path = Path("/tmp/bin/")
+    PASSIVE: bool = False
 
 
 class FilterHealthz(logging.Filter):

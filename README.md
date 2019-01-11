@@ -121,6 +121,7 @@ Repos: CRAN=https://cran-proxy.yourdomain.com
 | Name | Default | Description |
 |------------------------- |------------------------------ |-------------------------------------------------------------------------------------------------------- |
 | `DEBUG` | `FALSE` | If set to true the webserver will auto reload on changes, dump exceptions and set the log level to DEBUG |
+| `PASSIVE` | `FALSE` | If set to TRUE, the server will not attempt to compile any packages and will always return source packages |
 | `PORT` | `8000` | TCP Port to listen for HTTP requests on |
 | `UPSTREAM_CRAN_SERVER_URL` | `https://cloud.r-project.org/` | URL of CRAN server we are proxying. <span class="underline">Include trailing slash</span> |
 | `LOG_LEVEL` | `INFO` | Can be one of `INFO`, `WARNING`, `ERROR`, `DEBUG` |

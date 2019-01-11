@@ -94,16 +94,17 @@ async def packages(request):
 @app.route("/src/contrib/<path:path>/<package>.tar.gz")
 async def serve_tarfile(request, package, path=None):
 
-    binary_path = (
-        app.config.BINARY_OUTPUT_PATH / f"{package}_R_x86_64-pc-linux-gnu.tar.gz"
-    )
-    if os.path.isfile(binary_path):
-        return await file(binary_path)
-
     cran = URLObject(app.config.UPSTREAM_CRAN_SERVER_URL)
-
     to = cran.add_path(request.path)
-    asyncio.ensure_future(add_to_cache(to))
+
+    if not app.config.PASSIVE:
+        binary_path = (
+            app.config.BINARY_OUTPUT_PATH / f"{package}_R_x86_64-pc-linux-gnu.tar.gz"
+        )
+        if os.path.isfile(binary_path):
+            return await file(binary_path)
+        asyncio.ensure_future(add_to_cache(to))
+
     logger.info(f"serve_tarfile: Redirecting [302] to {to}")
     return redirect(to)
 

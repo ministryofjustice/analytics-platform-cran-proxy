@@ -50,6 +50,12 @@ def app():
 
 
 @pytest.fixture
+def passive_app(app):
+    app.config.PASSIVE = True
+    yield app
+
+
+@pytest.fixture
 def mock_aioresponse():
     with aioresponses(passthrough=["http://127.0.0.1"]) as m:
         yield m
@@ -99,3 +105,19 @@ def test_get_single_src_package(app, mock_aioresponse, r_package):
 
     # if it's a non binary r package then don't add to the compile queue
     assert app.compile_queue.empty()
+
+
+def test_non_passive_app(app, mock_aioresponse, r_package):
+    package_path = URLPath("/src/contrib/latest_0.7.5.tar.gz")
+    remote_path = app.config.UPSTREAM_CRAN_SERVER_URL.add_path(package_path)
+    mock_aioresponse.get(remote_path, status=200, body=r_package)
+    app.test_client.get(package_path, allow_redirects=False)
+    assert len(mock_aioresponse.requests) == 1
+
+
+def test_passive_app(passive_app, mock_aioresponse, r_package):
+    package_path = URLPath("/src/contrib/latest_0.7.5.tar.gz")
+    remote_path = passive_app.config.UPSTREAM_CRAN_SERVER_URL.add_path(package_path)
+    mock_aioresponse.get(remote_path, status=200, body=r_package)
+    passive_app.test_client.get(package_path, allow_redirects=False)
+    assert len(mock_aioresponse.requests) == 0

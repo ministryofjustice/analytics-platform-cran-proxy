@@ -1,4 +1,38 @@
-# Analytics Platform Cran Proxy
+# Analytics Platform Cran Proxy - DEPRECATED
+
+## Warning
+
+This tool is a failed experiment and we moved to using conda to manage R
+projects instead.
+
+### Decommissioning
+
+While this is deprecated, it is still deployed in the cluster and some RStudio
+instances do point their default cran server to: https://cran-proxy.services.alpha.mojanalytics.xyz
+
+Until we have no more Rstudio instances using the cran proxy, it should not be
+removed from the cluster.
+
+You can check traffic going to the cran proxy with the following command:
+`kubectl logs -n default -lapp=cran-proxy --since=24h`
+
+You can check that there are `rstudio-3.4.2-6` images running in the cluster.
+
+```
+kubectl get pods --all-namespaces -o jsonpath="{..image}" |tr -s '[[:space:]]' '\n' |sort |uniq -c | grep rstudio
+```
+The output will be something like:
+```
+    124 quay.io/mojanalytics/rstudio:1.2.1335-r3.5.1-python3.7.1-conda-3
+     10 quay.io/mojanalytics/rstudio:3.4.2-5
+      6 quay.io/mojanalytics/rstudio:3.4.2-6
+     34 quay.io/mojanalytics/rstudio-auth-proxy:v2.0.0
+      4 quay.io/mojanalytics/rstudio:r3.5.1-py3.7-conda
+     64 quay.io/mojanalytics/rstudio:r3.5.1-py3.7-conda-1
+
+```
+If there are no `rstudio:3.4.2-6` images running and there's been no traffic to the endpoint
+in the last few days then it should be safe to delete the cran-proxy helm deployment.
 
 [![Docker Repository on Quay](https://quay.io/repository/mojanalytics/cran-proxy/status "Docker Repository on Quay")](https://quay.io/repository/mojanalytics/cran-proxy)
 
